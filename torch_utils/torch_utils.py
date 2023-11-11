@@ -6,9 +6,8 @@ LICENSE:
 - https://github.com/makaishi2/pythonlibs/blob/main/LICENSE
 """  # noqa: E501
 
-from typing import TypeVar, Union
+from typing import Union, Optional
 from collections.abc import Callable, Iterable
-import pkgutil
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,8 +19,9 @@ import torch.utils.data
 import torch_geometric.data
 import torch_geometric.loader
 
+from torch_utils.utils import check_tqdm
+
 # for type hint
-T = TypeVar("T")
 DataBatch = Union[torch_geometric.data.Batch, torch_geometric.data.Data]
 DataLoader = Union[
     torch_geometric.loader.DataLoader,
@@ -34,71 +34,93 @@ LossFn = Union[
 
 
 class EarlyStopping:
-    """Early stops the training if validation loss doesn't improve after a given patience.
+    """
+    Early stops the training if validation loss doesn't improve after a given patience.
 
     This class is a copy and modification of the following program under MIT License.
 
     Reference:
     - https://github.com/Bjarten/early-stopping-pytorch/blob/3a28f68adeb44eab97716694367cc8c19ab331fd/pytorchtools.py
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
-        patience=7,
-        verbose=False,
-        delta=0,
-        path="checkpoint.pt",
-        trace_func=print,
-    ):
+        patience: int = 7,
+        verbose: bool = False,
+        delta: float = 0.0,
+        path: Optional[str] = None,
+        trace_func: Callable[[str], None] = print,
+    ) -> None:
         """
-        Args:
-            patience (int): How long to wait after last time validation loss improved.
-                            Default: 7
-            verbose (bool): If True, prints a message for each validation loss improvement.
-                            Default: False
-            delta (float): Minimum change in the monitored quantity to qualify as an improvement.
-                            Default: 0
-            path (str): Path for the checkpoint to be saved to.
-                            Default: 'checkpoint.pt'
-            trace_func (function): trace print function.
-                            Default: print
+        Parameters
+        ----------
+        patience : int, optional
+            How long to wait after last time validation loss improved.
+            , by default 7
+        verbose : bool, optional
+            If True, prints a message for each validation loss improvement.
+            , by default False
+        delta : float, optional
+            Minimum change in the monitored quantity to qualify as an
+            improvement., by default 0.0
+        path : str, optional
+            Path for the checkpoint to be saved to,
+            like 'checkpoint.pt'. if None, not save.
+            , by default None
+        trace_func : Callable[[str], None], optional
+            trace print function., by default print
         """
         self.patience = patience
         self.verbose = verbose
-        self.counter = 0
-        self.best_score = None
-        self.early_stop = False
-        self.val_loss_min = np.Inf
         self.delta = delta
         self.path = path
         self.trace_func = trace_func
 
-    def __call__(self, val_loss, model):
-        score = -val_loss
+        self.counter = 0
+        self.val_loss_min = float("inf")
 
-        if self.best_score is None:
-            self.best_score = score
+    def __call__(
+        self,
+        val_loss: float,
+        model: torch.nn.Module,
+    ) -> bool:
+        """check early stopping
+
+        Parameters
+        ----------
+        val_loss : float
+            validation loss
+        model : torch.nn.Module, optional
+            PyTorch model to be saved., by default None
+
+        Returns
+        -------
+        bool
+            True if early stopping.
+        """
+        if val_loss < self.val_loss_min - self.delta:
             self.save_checkpoint(val_loss, model)
-        elif score < self.best_score + self.delta:
+            self.val_loss_min = val_loss
+            self.counter = 0
+        else:
             self.counter += 1
             self.trace_func(
                 f"EarlyStopping counter: {self.counter} out of {self.patience}"
             )
             if self.counter >= self.patience:
-                self.early_stop = True
-        else:
-            self.best_score = score
-            self.save_checkpoint(val_loss, model)
-            self.counter = 0
+                return True
+        return False
 
-    def save_checkpoint(self, val_loss, model):
+    def save_checkpoint(self, val_loss: float, model: torch.nn.Module) -> None:
         """Saves model when validation loss decrease."""
         if self.verbose:
             self.trace_func(
-                f"Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ..."
+                "Validation loss decreased "
+                f"({self.val_loss_min:.6f} --> {val_loss:.6f}).  "
+                "Saving model ..."
             )
-        torch.save(model.state_dict(), self.path)
-        self.val_loss_min = val_loss
+        if self.path is not None:
+            torch.save(model.state_dict(), self.path)
 
 
 # 損失関数値計算用
@@ -133,7 +155,9 @@ def fit(
     device: torch.device = torch.device("cpu"),
     num_epochs: int = 100,
     history: np.ndarray = np.empty((0, 3)),
+    early_stopping: Optional[EarlyStopping] = None,
     ipynb: bool = False,
+    silent: bool = False,
 ) -> np.ndarray:
     base_epochs = len(history)
 
@@ -146,18 +170,8 @@ def fit(
         # 訓練フェーズ
         net.train()
 
-        if any(_module.name == "tqdm" for _module in pkgutil.iter_modules()):
-            if ipynb:
-                from tqdm.notebook import tqdm
-            else:
-                from tqdm import tqdm
-        else:
-
-            def tqdm(x: T) -> T:
-                return x
-
         # for inputs, labels in tqdm(train_loader):
-        for data_train in tqdm(train_loader):
+        for data_train in check_tqdm(train_loader, ipynb=ipynb, silent=silent):
             # 1バッチあたりのデータ件数
             train_batch_size = len(data_train)
             # 1エポックあたりのデータ累積件数
@@ -219,6 +233,12 @@ def fit(
         # 記録
         item = np.array([epoch + 1, avg_train_loss, avg_val_loss])
         history = np.vstack((history, item))
+
+        # early stopping
+        if early_stopping is not None and early_stopping(
+            val_loss=avg_val_loss, model=net
+        ):
+            break
     return history
 
 
