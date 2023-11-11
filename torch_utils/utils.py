@@ -83,13 +83,13 @@ def check_tqdm(
 
 
 class Limit:
-    def __init__(self, *arr: ArrayLike, alpha: float = 0.05) -> None:
-        self.arr = arr
+    def __init__(self, *arrays: ArrayLike, alpha: float = 0.05) -> None:
+        self.arrays = arrays
         self.alpha = alpha
 
         mins = []
         maxs = []
-        for _arr in self.arr:
+        for _arr in self.arrays:
             _arr = np.array(_arr).ravel()
             mins.append(np.min(_arr, axis=None))
             maxs.append(np.max(_arr, axis=None))
@@ -171,15 +171,18 @@ def root_mean_squared_error(
 def get_score_txt(
     y_true: ArrayLike,
     y_pred: ArrayLike,
-    score_mapping: dict[str, Callable[[ArrayLike, ArrayLike], float]] = dict(
-        RMSE=root_mean_squared_error, R2=r2_score
-    ),
+    score_mapping: dict[str, Callable[[ArrayLike, ArrayLike], float]] = {
+        "$\\mathrm{RMSE}$": root_mean_squared_error,
+        "$R^2$": r2_score,
+    },
+    subscript: Optional[str] = None,
     fmt: str = ".2g",
 ) -> str:
+    subscript = "" if subscript is None else subscript
     score_txts = []
     for name, score_func in score_mapping.items():
         score = score_func(y_true, y_pred)
-        score_txts.append(f"{name}: {score:{fmt}}")
+        score_txts.append(f"{name}$_\\mathrm{{{subscript}}}$: {score:{fmt}}")
     return "\n".join(score_txts)
 
 
@@ -188,6 +191,7 @@ def yyplot(
     ax: Optional[matplotlib.axes.Axes] = None,
     labels: Optional[Sequence[str]] = None,
     show_score: bool = True,
+    **kwargs_scatter,
 ) -> matplotlib.axes.Axes:
     if is_plotted(ax=ax) and ax is None:
         fig, ax = plt.subplots(facecolor="w", figsize=(3.2, 3.2), dpi=300)
@@ -211,9 +215,37 @@ def yyplot(
         ), "Number of labels must be half of arrays."
 
     lim = Limit(*y)
+    if show_score:
+        txts = []
     for i in range(n_pairs):
         y_true, y_pred = y[2 * i], y[2 * i + 1]
-        ax.scatter(y_true, y_pred, label=labels[i] if labels else None)
+        ax.scatter(
+            y_true,
+            y_pred,
+            label=labels[i] if labels else None,
+            **kwargs_scatter,
+        )
+
+        if show_score and labels is not None:
+            _txt = get_score_txt(
+                y_true, y_pred, subscript=labels[i] if labels else None
+            )
+            txts.append(_txt)
+
+    if show_score:
+        ax.text(
+            lim.without_margin[0],
+            lim.without_margin[1],
+            "\n".join(txts),
+            ha="left",
+            va="top",
+            bbox=dict(
+                facecolor="#f0f0f0",
+                alpha=0.7,
+                edgecolor="None",
+                boxstyle="round",
+            ),
+        )
 
     # layout
     ax.plot(*[lim.with_margin] * 2, color="gray", zorder=0.5)
@@ -222,15 +254,7 @@ def yyplot(
     ax.set_xlabel("$y_\\mathrm{true}$")
     ax.set_ylabel("$y_\\mathrm{pred}$")
     ax.set_aspect("equal", adjustable="box")
-    if show_score:
-        txt = get_score_txt(y_true, y_pred)
-        ax.text(
-            lim.without_margin[0],
-            lim.without_margin[1],
-            txt,
-            ha="left",
-            va="top",
-        )
+
     if labels is not None:
         ax.legend(loc="lower right")
     fig.tight_layout()
@@ -239,6 +263,6 @@ def yyplot(
 
 if __name__ == "__main__":
     # limit = Limit(np.arange(12), np.arange(12))
-    # print(limit.arr)
-    yyplot(np.arange(12), np.arange(12))
+    # print(limit.arrays)
+    yyplot(*[np.random.rand(12) for _ in range(4)])
     plt.show()
