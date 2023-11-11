@@ -1,7 +1,7 @@
 """
 This is my own utility package for PyTorch.
 
-Copyright © 2021 yu9824
+Copyright © 2023 yu9824
 """
 
 __version__ = "0.0.1"
