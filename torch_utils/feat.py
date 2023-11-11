@@ -322,8 +322,6 @@ def mol2data(
     edge_attr = (
         torch.tensor(bond_features, dtype=torch.float) if use_edges else None
     )
-    y = torch.tensor([y], dtype=torch.float) if y is not None else None
-
     return torch_geometric.data.Data(
         x=x,
         edge_index=edge_index,
