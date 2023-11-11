@@ -6,7 +6,7 @@ from joblib import Parallel, delayed
 import torch.utils.data
 import torch_geometric.data
 
-from src.feat import mol2data
+from torch_utils.feat import mol2data
 
 
 class GraphDataset(torch.utils.data.Dataset):
