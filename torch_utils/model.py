@@ -73,47 +73,47 @@ class GCN(torch.nn.Module):
         self.relu = torch.nn.LeakyReLU()
 
         # Output layer ( for scalar output ... REGRESSION )
-        self.out = torch.nn.Linear(embedding_size * 2, 1)
+        self.fc = torch.nn.Linear(embedding_size * 2, 1)
 
-    def forward(self, data: DataBatch) -> float:
+    def forward(self, data: DataBatch) -> torch.Tensor:
         x: torch.Tensor = data.x
         edge_index: torch.Tensor = data.edge_index
         batch_index: torch.Tensor = data.batch
         edge_attr: Optional[torch.Tensor] = data.edge_attr
 
-        x_conv0 = self.initial_conv(
+        x_conv0: torch.Tensor = self.initial_conv(
             x=x, edge_index=edge_index, edge_weight=edge_attr
         )
-        x_conv0 = self.batch_norm0(x_conv0)
-        x_conv0 = self.relu(x_conv0)
-        x_conv1 = self.conv1(
+        x_conv0: torch.Tensor = self.batch_norm0(x_conv0)
+        x_conv0: torch.Tensor = self.relu(x_conv0)
+        x_conv1: torch.Tensor = self.conv1(
             x=x_conv0, edge_index=edge_index, edge_weight=edge_attr
         )
-        x_conv1 = self.batch_norm1(x_conv1)
-        x_conv1 = self.relu(x_conv1)
-        x_conv2 = self.conv2(
+        x_conv1: torch.Tensor = self.batch_norm1(x_conv1)
+        x_conv1: torch.Tensor = self.relu(x_conv1)
+        x_conv2: torch.Tensor = self.conv2(
             x=x_conv1, edge_index=edge_index, edge_weight=edge_attr
         )
-        x_conv2 = self.relu(x_conv2)
-        x_conv2 = self.dropout(x_conv2)
-        x_conv3 = self.conv3(
+        x_conv2: torch.Tensor = self.relu(x_conv2)
+        x_conv2: torch.Tensor = self.dropout(x_conv2)
+        x_conv3: torch.Tensor = self.conv3(
             x=x_conv2, edge_index=edge_index, edge_weight=edge_attr
         )
-        x_conv3 = self.relu(x_conv3)
+        x_conv3: torch.Tensor = self.relu(x_conv3)
 
         # Global Pooling (stack different aggregations)
         # (reason) multiple nodes in one graph....
         # how to make 1 representation for graph??
         # use POOLING!
         # ( gmp : global MAX pooling, gap : global AVERAGE pooling )
-        x_pool = torch.cat(
+        x_pool: torch.Tensor = torch.cat(
             [
                 torch_geometric.nn.global_max_pool(x_conv3, batch_index),
                 torch_geometric.nn.global_mean_pool(x_conv3, batch_index),
             ],
             dim=1,
         )
-        out = self.out(x_pool).flatten()
+        out: torch.Tensor = self.fc(x_pool)
 
         if self.debug:
             print("x.shape", x.shape)
@@ -126,3 +126,11 @@ class GCN(torch.nn.Module):
 
         return out
         # return out, hidden
+
+    @property
+    def device(self) -> torch.device:
+        return next(self.parameters()).device
+
+    @device.setter
+    def device(self, __value) -> None:
+        raise AttributeError("can't attribute.")

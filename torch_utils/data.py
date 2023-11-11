@@ -13,7 +13,7 @@ class GraphDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         mols: Sequence[rdkit.Chem.rdchem.Mol],
-        y: Sequence[float],
+        y: Sequence[torch.Tensor],
         n_jobs: Optional[int] = None,
     ) -> None:
         super().__init__()
@@ -37,7 +37,7 @@ class GraphDataset(torch.utils.data.Dataset):
         )(
             delayed(mol2data)(
                 mol=mol,
-                y=_y,
+                y=_y.view(1, -1),
                 use_chirality=False,
                 use_partial_charge=False,
                 use_edges=False,
@@ -52,7 +52,7 @@ class GraphDataset(torch.utils.data.Dataset):
         return self._data[index]
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({len(self)})"
+        return f"{self.__class__.__name__}(size={len(self)})"
 
     def __repr__(self) -> str:
         return str(self)

@@ -210,7 +210,7 @@ def _construct_bond_feature(bond: rdkit.Chem.rdchem.Bond) -> np.ndarray:
 
 def mol2data(
     mol: rdkit.Chem.rdchem.Mol,
-    y: Optional[float] = None,
+    y: Optional[torch.Tensor] = None,
     use_chirality: bool = False,
     use_partial_charge: bool = False,
     use_edges: bool = False,
@@ -221,7 +221,7 @@ def mol2data(
     ----------
     mol: rdkit.Chem.rdchem.Mol
         RDKit mol object.
-    y: Optional[float], default None
+    y: Optional[torch.Tensor], default None
         Target value.
     use_chirality: bool, default False
         Whether to use chirality information or not.
