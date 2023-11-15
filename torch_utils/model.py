@@ -134,3 +134,145 @@ class GCN(torch.nn.Module):
     @device.setter
     def device(self, __value) -> None:
         raise AttributeError("can't attribute.")
+
+
+class GNN(torch.nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        embedding_size: int = 64,
+        n_features_edge: int = 11,
+        n_features_node: int = 30,
+        debug: bool = False,
+    ):
+        """Graph Convolutional Network
+
+        Reference
+        - https://seunghan96.github.io/gnn/PyG_review1/
+
+        Parameters
+        ----------
+        in_channels : int
+            channel size of input
+        embedding_size : int, optional
+            embedding size of hidden layer, by default 64
+        debug : bool, optional
+            debug mode, by default False
+        """
+        # Init parent
+        super().__init__()
+        self.debug = debug
+
+        # GCN layers ( for Message Passing )
+        self.initial_conv = torch_geometric.nn.NNConv(
+            n_features_node,
+            embedding_size,
+            nn=torch.nn.Sequential(
+                torch.nn.Linear(n_features_edge, embedding_size),
+                torch.nn.LeakyReLU(),
+                torch.nn.Linear(
+                    embedding_size, embedding_size * n_features_node
+                ),
+            ),
+        )
+        self.batch_norm0 = torch_geometric.nn.norm.BatchNorm(embedding_size)
+        self.conv1 = torch_geometric.nn.NNConv(
+            embedding_size,
+            embedding_size,
+            nn=torch.nn.Sequential(
+                torch.nn.Linear(n_features_edge, embedding_size),
+                torch.nn.LeakyReLU(),
+                torch.nn.Linear(
+                    embedding_size, embedding_size * embedding_size
+                ),
+            ),
+        )
+        self.batch_norm1 = torch_geometric.nn.norm.BatchNorm(embedding_size)
+        self.conv2 = torch_geometric.nn.NNConv(
+            embedding_size,
+            embedding_size,
+            nn=torch.nn.Sequential(
+                torch.nn.Linear(n_features_edge, embedding_size),
+                torch.nn.LeakyReLU(),
+                torch.nn.Linear(
+                    embedding_size, embedding_size * embedding_size
+                ),
+            ),
+        )
+        self.conv3 = torch_geometric.nn.NNConv(
+            embedding_size,
+            embedding_size,
+            nn=torch.nn.Sequential(
+                torch.nn.Linear(n_features_edge, embedding_size),
+                torch.nn.LeakyReLU(),
+                torch.nn.Linear(
+                    embedding_size, embedding_size * embedding_size
+                ),
+            ),
+        )
+
+        self.dropout = torch.nn.Dropout(0.01)
+        self.relu = torch.nn.LeakyReLU()
+
+        # Output layer ( for scalar output ... REGRESSION )
+        self.fc = torch.nn.Linear(embedding_size * 2, 1)
+
+    def forward(self, data: DataBatch) -> torch.Tensor:
+        x: torch.Tensor = data.x
+        edge_index: torch.Tensor = data.edge_index
+        batch_index: torch.Tensor = data.batch
+        edge_attr: Optional[torch.Tensor] = data.edge_attr
+
+        x_conv0: torch.Tensor = self.initial_conv(
+            x=x, edge_index=edge_index, edge_attr=edge_attr
+        )
+        x_conv0: torch.Tensor = self.batch_norm0(x_conv0)
+        x_conv0: torch.Tensor = self.relu(x_conv0)
+        x_conv1: torch.Tensor = self.conv1(
+            x=x_conv0, edge_index=edge_index, edge_attr=edge_attr
+        )
+        x_conv1: torch.Tensor = self.batch_norm1(x_conv1)
+        x_conv1: torch.Tensor = self.relu(x_conv1)
+        x_conv2: torch.Tensor = self.conv2(
+            x=x_conv1, edge_index=edge_index, edge_attr=edge_attr
+        )
+        x_conv2: torch.Tensor = self.relu(x_conv2)
+        x_conv2: torch.Tensor = self.dropout(x_conv2)
+        x_conv3: torch.Tensor = self.conv3(
+            x=x_conv2, edge_index=edge_index, edge_attr=edge_attr
+        )
+        x_conv3: torch.Tensor = self.relu(x_conv3)
+
+        # Global Pooling (stack different aggregations)
+        # (reason) multiple nodes in one graph....
+        # how to make 1 representation for graph??
+        # use POOLING!
+        # ( gmp : global MAX pooling, gap : global AVERAGE pooling )
+        x_pool: torch.Tensor = torch.cat(
+            [
+                torch_geometric.nn.global_max_pool(x_conv3, batch_index),
+                torch_geometric.nn.global_mean_pool(x_conv3, batch_index),
+            ],
+            dim=1,
+        )
+        out: torch.Tensor = self.fc(x_pool)
+
+        if self.debug:
+            print("x.shape", x.shape)
+            print("x_conv0.shape", x_conv0.shape)
+            print("x_conv1.shape", x_conv1.shape)
+            print("x_conv2.shape", x_conv2.shape)
+            print("x_conv3.shape", x_conv3.shape)
+            print("x_pool.shape", x_pool.shape)
+            print("out.shape", out.shape)
+
+        return out
+        # return out, hidden
+
+    @property
+    def device(self) -> torch.device:
+        return next(self.parameters()).device
+
+    @device.setter
+    def device(self, __value) -> None:
+        raise AttributeError("can't attribute.")
