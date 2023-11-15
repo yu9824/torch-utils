@@ -16,6 +16,9 @@ class GraphDataset(torch.utils.data.Dataset):
         self,
         mols: Sequence[rdkit.Chem.rdchem.Mol],
         y: Sequence[ArrayLike],
+        use_chirality: bool = False,
+        use_partial_charge: bool = False,
+        use_edges: bool = False,
         n_jobs: Optional[int] = None,
         ipynb: bool = False,
         silent: bool = False,
@@ -40,9 +43,9 @@ class GraphDataset(torch.utils.data.Dataset):
                 y=torch.Tensor(_y).view(
                     1, -1
                 ),  # To match shape in loss calculation
-                use_chirality=False,
-                use_partial_charge=False,
-                use_edges=False,
+                use_chirality=use_chirality,
+                use_partial_charge=use_partial_charge,
+                use_edges=use_edges,
             )
             for mol, _y in check_tqdm(
                 zip(self.mols, self.y),
