@@ -142,7 +142,6 @@ class GNN(torch.nn.Module):
         in_channels: int,
         embedding_size: int = 64,
         n_features_edge: int = 11,
-        n_features_node: int = 30,
         debug: bool = False,
     ):
         """Graph Convolutional Network
@@ -153,9 +152,11 @@ class GNN(torch.nn.Module):
         Parameters
         ----------
         in_channels : int
-            channel size of input
+            channel size of input (node feature size)
         embedding_size : int, optional
             embedding size of hidden layer, by default 64
+        n_features_edge : int, optional
+            channel size of edge feature, by default 11
         debug : bool, optional
             debug mode, by default False
         """
@@ -165,13 +166,13 @@ class GNN(torch.nn.Module):
 
         # GCN layers ( for Message Passing )
         self.initial_conv = torch_geometric.nn.NNConv(
-            n_features_node,
+            in_channels,
             embedding_size,
             nn=torch.nn.Sequential(
                 torch.nn.Linear(n_features_edge, embedding_size),
                 torch.nn.LeakyReLU(),
                 torch.nn.Linear(
-                    embedding_size, embedding_size * n_features_node
+                    embedding_size, embedding_size * in_channels
                 ),
             ),
         )
