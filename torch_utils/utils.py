@@ -1,6 +1,7 @@
 from typing import Iterable, Tuple, Sequence, Callable
-from typing import TypeVar, Union, overload, Literal, Optional
+from typing import TypeVar, Union, overload, Literal, Optional, Any
 import pkgutil
+import inspect
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -9,6 +10,24 @@ import matplotlib.axes
 from sklearn.metrics import r2_score, mean_squared_error
 
 T = TypeVar("T")
+
+
+def is_argument(func: Callable[[Any], Any], arg_name: str) -> bool:
+    """Check if a function has an argument
+
+    Parameters
+    ----------
+    func : Callable[[Any], Any]
+        function to check
+    arg_name : str
+        argument name to check
+
+    Returns
+    -------
+    bool
+        True if the function has the argument, False otherwise
+    """
+    return arg_name in inspect.signature(func).parameters.keys()
 
 
 def is_installed(module_name: str) -> bool:
