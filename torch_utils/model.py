@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Type
 
 import torch
 import torch.nn
@@ -69,7 +69,7 @@ class GCN(torch.nn.Module):
         self.conv2 = torch_geometric.nn.GCNConv(embedding_size, embedding_size)
         self.conv3 = torch_geometric.nn.GCNConv(embedding_size, embedding_size)
 
-        self.dropout = torch.nn.Dropout(0.01)
+        self.dropout = torch.nn.Dropout(0.05)
         self.relu = torch.nn.LeakyReLU()
 
         # Output layer ( for scalar output ... REGRESSION )
@@ -171,9 +171,7 @@ class GNN(torch.nn.Module):
             nn=torch.nn.Sequential(
                 torch.nn.Linear(n_features_edge, embedding_size),
                 torch.nn.LeakyReLU(),
-                torch.nn.Linear(
-                    embedding_size, embedding_size * in_channels
-                ),
+                torch.nn.Linear(embedding_size, embedding_size * in_channels),
             ),
         )
         self.batch_norm0 = torch_geometric.nn.norm.BatchNorm(embedding_size)
@@ -212,7 +210,7 @@ class GNN(torch.nn.Module):
             ),
         )
 
-        self.dropout = torch.nn.Dropout(0.01)
+        self.dropout = torch.nn.Dropout(0.05)
         self.relu = torch.nn.LeakyReLU()
 
         # Output layer ( for scalar output ... REGRESSION )
@@ -277,3 +275,92 @@ class GNN(torch.nn.Module):
     @device.setter
     def device(self, __value) -> None:
         raise AttributeError("can't attribute.")
+
+
+class GraphConvLayer(torch.nn.Module):
+    def __init__(
+        self,
+        message_passing_class: Type[
+            Union[
+                torch_geometric.nn.GCNConv,
+                torch_geometric.nn.NNConv,
+                torch_geometric.nn.GINConv,
+            ]
+        ],
+        in_channels: int = 30,
+        out_channels: int = 64,
+        drop_rate: float = 0.05,
+        use_edges: bool = False,
+        n_edge_feature: int = 11,
+    ) -> None:
+        super().__init__()
+        self.message_passing_class = message_passing_class
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.drop_rate = drop_rate
+        self.use_edges = use_edges
+        self.n_edge_feature = n_edge_feature
+
+        if self.message_passing_class is torch_geometric.nn.NNConv:
+            if not self.use_edges:
+                raise ValueError(
+                    "NNConv requires edge features, but use_edges is False."
+                )
+            self.message_passing = self.message_passing_class(
+                self.in_channels,
+                self.out_channels,
+                nn=torch.nn.Sequential(
+                    torch.nn.Linear(self.n_edge_feature, self.out_channels),
+                    torch.nn.LeakyReLU(),
+                    torch.nn.Dropout(p=self.drop_rate),
+                    torch.nn.Linear(
+                        self.out_channels,
+                        self.out_channels * self.in_channels,
+                    ),
+                ),
+            )
+        elif self.message_passing_class is torch_geometric.nn.GCNConv:
+            self.message_passing = self.message_passing_class(
+                self.in_channels, self.out_channels
+            )
+        elif self.message_passing_class is torch_geometric.nn.GINConv:
+            if self.use_edges:
+                raise ValueError(
+                    "GINConv does not require edge features, "
+                    "but use_edges is True."
+                )
+            self.message_passing = self.message_passing_class(
+                torch.nn.Sequential(
+                    torch.nn.Linear(self.in_channels, self.out_channels),
+                    torch.nn.LeakyReLU(),
+                    torch.nn.Dropout(p=self.drop_rate),
+                    torch.nn.Linear(
+                        self.out_channels, self.out_channels * self.in_channels
+                    ),
+                )
+            )
+        else:
+            raise ValueError(
+                f"Unknown message passing class {self.message_passing_class}."
+            )
+
+    def forward(self, data: torch_geometric.data.Data) -> torch.Tensor:
+        x: torch.Tensor = data.x
+        edge_index: torch.Tensor = data.edge_index
+        edge_attr: Optional[torch.Tensor] = data.edge_attr
+        if self.message_passing_class is torch_geometric.nn.NNConv:
+            return self.message_passing(
+                x=x, edge_index=edge_index, edge_attr=edge_attr
+            )
+        elif self.message_passing_class is torch_geometric.nn.GCNConv:
+            return self.message_passing(
+                x=x, edge_index=edge_index, edge_weight=edge_attr
+            )
+        elif self.message_passing_class is torch_geometric.nn.GINConv:
+            return self.message_passing(x=x, edge_index=edge_index)
+        else:
+            return self.message_passing(x=x, edge_index=edge_index)
+
+
+if __name__ == "__main__":
+    gc = GraphConvLayer(torch_geometric.nn.GCNConv)
