@@ -5,6 +5,9 @@ from lightning.pytorch.utilities.types import STEP_OUTPUT, OptimizerLRScheduler
 
 from torch_utils.torch_utils import DataBatch, LossFn
 
+# TODO: yやy_predをlogに保存
+# TODO: train loss
+
 
 class LightningGCN(lightning.LightningModule):
     def __init__(
@@ -31,7 +34,13 @@ class LightningGCN(lightning.LightningModule):
 
         # 損失計算
         loss = self.criterion(y_pred_train, databatch.y)
-        self.log("train_loss", loss)
+        self.log(
+            "train_loss",
+            loss,
+            on_epoch=True,
+            on_step=False,
+            batch_size=len(databatch),
+        )
 
         return loss
 
@@ -44,7 +53,7 @@ class LightningGCN(lightning.LightningModule):
 
         # 損失計算
         loss = self.criterion(y_pred_val, databatch.y)
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, batch_size=len(databatch))
 
         return loss
 
@@ -54,7 +63,7 @@ class LightningGCN(lightning.LightningModule):
 
         # 損失計算
         loss = self.criterion(y_pred_test, databatch.y)
-        self.log("test_loss", loss)
+        self.log("test_loss", loss, batch_size=len(databatch))
 
         return loss
 
