@@ -4,7 +4,7 @@ This is my own utility package for PyTorch.
 Copyright © 2023 yu9824
 """
 
-__version__ = "0.0.2dev4"
+__version__ = "0.0.3"
 __license__ = "MIT"
 __author__ = "yu9824"
 __copyright__ = "Copyright © 2023 yu9824"
