@@ -34,6 +34,10 @@ class LightningGCN(lightning.LightningModule):
 
         # 損失計算
         loss = self.criterion(y_pred_train, databatch.y)
+
+        # 'on_epoch' などのタイミングについては下記サイトを参考
+        # https://lightning.ai/docs/pytorch/stable/extensions/logging.html
+        # こうすると自動でepochごとに平均を取ってくれる
         self.log(
             "train_loss",
             loss,
