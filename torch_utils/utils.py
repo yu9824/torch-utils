@@ -49,33 +49,30 @@ def is_installed(module_name: str) -> bool:
 
 
 if is_installed("tqdm"):
-    from tqdm.notebook import tqdm
+    from tqdm.auto import tqdm
 
     @overload
     def check_tqdm(
         __iterable: Optional[Iterable[T]],
-        ipynb: Literal[True],
         silent: Literal[False],
         **kwargs,
     ) -> Union[tqdm, Iterable[T]]:
         ...
 
-    from tqdm import tqdm
+else:
 
     @overload
     def check_tqdm(
-        __iterable: Optional[Iterable[T]] = None,
-        ipynb: Literal[False] = False,
-        silent: Literal[False] = False,
+        __iterable: Optional[Iterable[T]],
+        silent: Literal[False],
         **kwargs,
-    ) -> Union[tqdm, Iterable[T]]:
+    ) -> Iterable[T]:
         ...
 
 
 @overload
 def check_tqdm(
     __iterable: Optional[Iterable[T]],
-    ipynb: bool,
     silent: Literal[True],
     **kwargs,
 ) -> Iterable[T]:
@@ -84,21 +81,15 @@ def check_tqdm(
 
 def check_tqdm(
     __iterable: Optional[Iterable[T]] = None,
-    ipynb: bool = False,
     silent: bool = False,
     **kwargs,
 ) -> Iterable[T]:
     if silent or not is_installed("tqdm"):
         return __iterable
     else:
-        if ipynb:
-            from tqdm.notebook import tqdm
+        from tqdm.auto import tqdm
 
-            return tqdm(__iterable, **kwargs)
-        else:
-            from tqdm import tqdm
-
-            return tqdm(__iterable, **kwargs)
+        return tqdm(__iterable, **kwargs)
 
 
 class Limit:
