@@ -156,7 +156,6 @@ def fit(
     num_epochs: int = 100,
     history: np.ndarray = np.empty((0, 3)),
     early_stopping: Optional[EarlyStopping] = None,
-    ipynb: bool = False,
     silent: bool = False,
 ) -> np.ndarray:
     base_epochs = len(history)
@@ -171,7 +170,7 @@ def fit(
         net.train()
 
         # for inputs, labels in tqdm(train_loader):
-        for data_train in check_tqdm(train_loader, ipynb=ipynb, silent=silent):
+        for data_train in check_tqdm(train_loader, silent=silent):
             # 1バッチあたりのデータ件数
             train_batch_size = len(data_train)
             # 1エポックあたりのデータ累積件数

@@ -20,7 +20,6 @@ class GraphDataset(torch.utils.data.Dataset):
         use_partial_charge: bool = False,
         use_edges: bool = False,
         n_jobs: Optional[int] = None,
-        ipynb: bool = False,
         silent: bool = False,
     ) -> None:
         super().__init__()
@@ -50,7 +49,6 @@ class GraphDataset(torch.utils.data.Dataset):
             for mol, _y in check_tqdm(
                 zip(self.mols, self.y),
                 total=len(self.mols),
-                ipynb=ipynb,
                 silent=silent,
             )
         )
