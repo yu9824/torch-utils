@@ -1,13 +1,13 @@
-from typing import Iterable, Tuple, Sequence, Callable
-from typing import TypeVar, Union, overload, Literal, Optional, Any
-import pkgutil
 import inspect
+import pkgutil
+from collections.abc import Callable, Iterable, Sequence
+from typing import Any, Literal, Optional, TypeVar, Union, overload
 
+import matplotlib.axes
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import ArrayLike
-import matplotlib.pyplot as plt
-import matplotlib.axes
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 T = TypeVar("T")
 
@@ -56,8 +56,7 @@ if is_installed("tqdm"):
         __iterable: Optional[Iterable[T]],
         silent: Literal[False],
         **kwargs,
-    ) -> Union[tqdm, Iterable[T]]:
-        ...
+    ) -> Union[tqdm, Iterable[T]]: ...
 
 else:
 
@@ -66,8 +65,7 @@ else:
         __iterable: Optional[Iterable[T]],
         silent: Literal[False],
         **kwargs,
-    ) -> Iterable[T]:
-        ...
+    ) -> Iterable[T]: ...
 
 
 @overload
@@ -75,8 +73,7 @@ def check_tqdm(
     __iterable: Optional[Iterable[T]],
     silent: Literal[True],
     **kwargs,
-) -> Iterable[T]:
-    ...
+) -> Iterable[T]: ...
 
 
 def check_tqdm(
@@ -113,7 +110,7 @@ class Limit:
 
     @classmethod
     def from_with_margin(
-        cls, with_margin: Tuple[float, float], alpha: float = 0.05
+        cls, with_margin: tuple[float, float], alpha: float = 0.05
     ) -> "Limit":
         return cls(
             (
@@ -125,19 +122,19 @@ class Limit:
         )
 
     @property
-    def without_margin(self) -> Tuple[float, float]:
+    def without_margin(self) -> tuple[float, float]:
         return self.__without_margin
 
     @without_margin.setter
-    def without_margin(self, value: Tuple[float, float]) -> None:
+    def without_margin(self, value: tuple[float, float]) -> None:
         raise AttributeError("Cannot set attribute")
 
     @property
-    def with_margin(self) -> Tuple[float, float]:
+    def with_margin(self) -> tuple[float, float]:
         return self.__with_margin
 
     @with_margin.setter
-    def with_margin(self, value: Tuple[float, float]) -> None:
+    def with_margin(self, value: tuple[float, float]) -> None:
         raise AttributeError("Cannot set attribute")
 
 

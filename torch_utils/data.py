@@ -1,11 +1,11 @@
 from collections.abc import Sequence
-from typing import SupportsIndex, Optional
+from typing import Optional, SupportsIndex
 
-from numpy.typing import ArrayLike
 import rdkit.Chem.rdchem
-from joblib import Parallel, delayed
 import torch.utils.data
 import torch_geometric.data
+from joblib import Parallel, delayed
+from numpy.typing import ArrayLike
 
 from torch_utils.feat import mol2data
 from torch_utils.utils import check_tqdm

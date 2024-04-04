@@ -6,13 +6,12 @@ LICENSE:
 - https://github.com/makaishi2/pythonlibs/blob/main/LICENSE
 """  # noqa: E501
 
-from typing import Union, Optional
 from collections.abc import Callable, Iterable
+from typing import Optional, Union
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.axes
-
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn
 import torch.utils.data

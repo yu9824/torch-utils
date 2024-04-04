@@ -1,6 +1,7 @@
 from typing import Any
-import torch
+
 import lightning
+import torch
 from lightning.pytorch.utilities.types import STEP_OUTPUT, OptimizerLRScheduler
 
 from torch_utils.torch_utils import DataBatch, LossFn

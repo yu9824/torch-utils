@@ -17,17 +17,15 @@ Repositories:
 - https://github.com/awslabs/dgl-lifesci
 """  # noqa: E501
 
-from typing import Optional
-import os
 import logging
-from typing import List, Union, Tuple
+import os
+from typing import Optional, Union
 
 import numpy as np
 import rdkit.Chem.rdchem
-from rdkit import Chem
-
 import torch
 import torch_geometric.data
+from rdkit import Chem
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +130,7 @@ ALLEN_ELECTRONEGATIVTY = {  # Allen scale electronegativity
 
 def _construct_atom_feature(
     atom: rdkit.Chem.rdchem.Atom,
-    h_bond_infos: List[Tuple[int, str]],
+    h_bond_infos: list[tuple[int, str]],
     use_chirality: bool,
     use_partial_charge: bool,
 ) -> np.ndarray:
@@ -142,7 +140,7 @@ def _construct_atom_feature(
     ----------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    h_bond_infos: List[Tuple[int, str]]
+    h_bond_infos: list[tuple[int, str]]
         A list of tuple `(atom_index, hydrogen_bonding_type)`.
         Basically, it is expected that this value is the return value of
         `construct_hydrogen_bonding_info`. The `hydrogen_bonding_type`
@@ -351,9 +349,9 @@ class _ChemicalFeaturesFactory:
 
 def one_hot_encode(
     val: Union[int, str],
-    allowable_set: Union[List[str], List[int]],
+    allowable_set: Union[list[str], list[int]],
     include_unknown_set: bool = False,
-) -> List[float]:
+) -> list[float]:
     """One hot encoder for elements of a provided set.
 
     Examples
@@ -371,14 +369,14 @@ def one_hot_encode(
     ----------
     val: int or str
         The value must be present in `allowable_set`.
-    allowable_set: List[int] or List[str]
-        List of allowable quantities.
+    allowable_set: list[int] or list[str]
+        list of allowable quantities.
     include_unknown_set: bool, default False
         If true, the index of all values not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         An one-hot vector of val.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -421,16 +419,16 @@ def one_hot_encode(
 
 def get_atom_type_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[str] = DEFAULT_ATOM_TYPE_SET,
+    allowable_set: list[str] = DEFAULT_ATOM_TYPE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of an atom type.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[str]
+    allowable_set: list[str]
         The atom types to consider. The default set is
         `["C", "N", "O", "F", "P", "S", "Cl", "Br", "I"]`.
     include_unknown_set: bool, default True
@@ -438,7 +436,7 @@ def get_atom_type_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         An one-hot vector of atom types.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -448,7 +446,7 @@ def get_atom_type_one_hot(
 
 def construct_hydrogen_bonding_info(
     mol: rdkit.Chem.rdchem.Mol,
-) -> List[Tuple[int, str]]:
+) -> list[tuple[int, str]]:
     """Construct hydrogen bonding infos about a molecule.
 
     Parameters
@@ -458,7 +456,7 @@ def construct_hydrogen_bonding_info(
 
     Returns
     -------
-    List[Tuple[int, str]]
+    list[tuple[int, str]]
         A list of tuple `(atom_index, hydrogen_bonding_type)`.
         The `hydrogen_bonding_type` value is "Acceptor" or "Donor".
     """  # noqa: E501
@@ -471,21 +469,21 @@ def construct_hydrogen_bonding_info(
 
 
 def get_atom_hydrogen_bonding_one_hot(
-    atom: rdkit.Chem.rdchem.Atom, hydrogen_bonding: List[Tuple[int, str]]
-) -> List[float]:
+    atom: rdkit.Chem.rdchem.Atom, hydrogen_bonding: list[tuple[int, str]]
+) -> list[float]:
     """Get an one-hot feat about whether an atom accepts electrons or donates electrons.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    hydrogen_bonding: List[Tuple[int, str]]
+    hydrogen_bonding: list[tuple[int, str]]
         The return value of `construct_hydrogen_bonding_info`.
         The value is a list of tuple `(atom_index, hydrogen_bonding)` like (1, "Acceptor").
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the ring size type. The first element
         indicates "Donor", and the second element indicates "Acceptor".
     """  # noqa: E501
@@ -502,7 +500,7 @@ def get_atom_hydrogen_bonding_one_hot(
 
 def get_atom_is_in_aromatic_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-) -> List[float]:
+) -> list[float]:
     """Get ans one-hot feature about whether an atom is in aromatic system or not.
 
     Parameters
@@ -512,7 +510,7 @@ def get_atom_is_in_aromatic_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         A vector of whether an atom is in aromatic system or not.
     """  # noqa: E501
     return [float(atom.GetIsAromatic())]
@@ -520,23 +518,23 @@ def get_atom_is_in_aromatic_one_hot(
 
 def get_atom_hybridization_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[str] = DEFAULT_HYBRIDIZATION_SET,
+    allowable_set: list[str] = DEFAULT_HYBRIDIZATION_SET,
     include_unknown_set: bool = False,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of hybridization type.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[str]
+    allowable_set: list[str]
         The hybridization types to consider. The default set is `["SP", "SP2", "SP3"]`
     include_unknown_set: bool, default False
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         An one-hot vector of the hybridization type.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -548,23 +546,23 @@ def get_atom_hybridization_one_hot(
 
 def get_atom_total_num_Hs_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[int] = DEFAULT_TOTAL_NUM_Hs_SET,
+    allowable_set: list[int] = DEFAULT_TOTAL_NUM_Hs_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of the number of hydrogens which an atom has.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[int]
+    allowable_set: list[int]
         The number of hydrogens to consider. The default set is `[0, 1, ..., 4]`
     include_unknown_set: bool, default True
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the number of hydrogens which an atom has.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -574,7 +572,7 @@ def get_atom_total_num_Hs_one_hot(
     )
 
 
-def get_atom_chirality_one_hot(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
+def get_atom_chirality_one_hot(atom: rdkit.Chem.rdchem.Atom) -> list[float]:
     """Get an one-hot feature about an atom chirality type.
 
     Parameters
@@ -584,7 +582,7 @@ def get_atom_chirality_one_hot(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the chirality type. The first element
         indicates "R", and the second element indicates "S".
     """  # noqa: E501
@@ -600,7 +598,7 @@ def get_atom_chirality_one_hot(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
     return one_hot
 
 
-def get_atom_formal_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
+def get_atom_formal_charge(atom: rdkit.Chem.rdchem.Atom) -> list[float]:
     """Get a formal charge of an atom.
 
     Parameters
@@ -610,7 +608,7 @@ def get_atom_formal_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
 
     Returns
     -------
-    List[float]
+    list[float]
         A vector of the formal charge.
     """  # noqa: E501
     return [float(atom.GetFormalCharge())]
@@ -618,16 +616,16 @@ def get_atom_formal_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
 
 def get_atom_formal_charge_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[int] = DEFAULT_FORMAL_CHARGE_SET,
+    allowable_set: list[int] = DEFAULT_FORMAL_CHARGE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get one hot encoding of formal charge of an atom.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[int]
+    allowable_set: list[int]
         The degree to consider. The default set is `[-2, -1, ..., 2]`
     include_unknown_set: bool, default True
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
@@ -635,7 +633,7 @@ def get_atom_formal_charge_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         A vector of the formal charge.
     """  # noqa: E501
     return one_hot_encode(
@@ -643,7 +641,7 @@ def get_atom_formal_charge_one_hot(
     )
 
 
-def get_atom_partial_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
+def get_atom_partial_charge(atom: rdkit.Chem.rdchem.Atom) -> list[float]:
     """Get a partial charge of an atom.
 
     Parameters
@@ -653,7 +651,7 @@ def get_atom_partial_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
 
     Returns
     -------
-    List[float]
+    list[float]
         A vector of the parital charge.
 
     Notes
@@ -669,23 +667,23 @@ def get_atom_partial_charge(atom: rdkit.Chem.rdchem.Atom) -> List[float]:
 
 def get_atom_total_degree_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[int] = DEFAULT_TOTAL_DEGREE_SET,
+    allowable_set: list[int] = DEFAULT_TOTAL_DEGREE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of the degree which an atom has.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[int]
+    allowable_set: list[int]
         The degree to consider. The default set is `[0, 1, ..., 5]`
     include_unknown_set: bool, default True
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the degree which an atom has.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -697,23 +695,23 @@ def get_atom_total_degree_one_hot(
 
 def get_atom_implicit_valence_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[int] = DEFAULT_ATOM_IMPLICIT_VALENCE_SET,
+    allowable_set: list[int] = DEFAULT_ATOM_IMPLICIT_VALENCE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of implicit valence of an atom.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[int]
+    allowable_set: list[int]
         Atom implicit valence to consider. The default set is `[0, 1, ..., 6]`
     include_unknown_set: bool, default True
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of implicit valence an atom has.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -726,23 +724,23 @@ def get_atom_implicit_valence_one_hot(
 
 def get_atom_explicit_valence_one_hot(
     atom: rdkit.Chem.rdchem.Atom,
-    allowable_set: List[int] = DEFAULT_ATOM_EXPLICIT_VALENCE_SET,
+    allowable_set: list[int] = DEFAULT_ATOM_EXPLICIT_VALENCE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of explicit valence of an atom.
 
     Parameters
     ---------
     atom: rdkit.Chem.rdchem.Atom
         RDKit atom object
-    allowable_set: List[int]
+    allowable_set: list[int]
         Atom explicit valence to consider. The default set is `[1, ..., 6]`
     include_unknown_set: bool, default True
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of explicit valence an atom has.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -760,23 +758,23 @@ def get_atom_explicit_valence_one_hot(
 
 def get_bond_type_one_hot(
     bond: rdkit.Chem.rdchem.Bond,
-    allowable_set: List[str] = DEFAULT_BOND_TYPE_SET,
+    allowable_set: list[str] = DEFAULT_BOND_TYPE_SET,
     include_unknown_set: bool = False,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of bond type.
 
     Parameters
     ---------
     bond: rdkit.Chem.rdchem.Bond
         RDKit bond object
-    allowable_set: List[str]
+    allowable_set: list[str]
         The bond types to consider. The default set is `["SINGLE", "DOUBLE", "TRIPLE", "AROMATIC"]`.
     include_unknown_set: bool, default False
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the bond type.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -788,7 +786,7 @@ def get_bond_type_one_hot(
 
 def get_bond_is_in_same_ring_one_hot(
     bond: rdkit.Chem.rdchem.Bond,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature about whether atoms of a bond is in the same ring or not.
 
     Parameters
@@ -798,7 +796,7 @@ def get_bond_is_in_same_ring_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of whether a bond is in the same ring or not.
     """  # noqa: E501
     return [int(bond.IsInRing())]
@@ -806,7 +804,7 @@ def get_bond_is_in_same_ring_one_hot(
 
 def get_bond_is_conjugated_one_hot(
     bond: rdkit.Chem.rdchem.Bond,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature about whether a bond is conjugated or not.
 
     Parameters
@@ -816,7 +814,7 @@ def get_bond_is_conjugated_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of whether a bond is conjugated or not.
     """  # noqa: E501
     return [int(bond.GetIsConjugated())]
@@ -824,16 +822,16 @@ def get_bond_is_conjugated_one_hot(
 
 def get_bond_stereo_one_hot(
     bond: rdkit.Chem.rdchem.Bond,
-    allowable_set: List[str] = DEFAULT_BOND_STEREO_SET,
+    allowable_set: list[str] = DEFAULT_BOND_STEREO_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of the stereo configuration of a bond.
 
     Parameters
     ---------
     bond: rdkit.Chem.rdchem.Bond
         RDKit bond object
-    allowable_set: List[str]
+    allowable_set: list[str]
         The stereo configuration types to consider.
         The default set is `["STEREONONE", "STEREOANY", "STEREOZ", "STEREOE"]`.
     include_unknown_set: bool, default True
@@ -841,7 +839,7 @@ def get_bond_stereo_one_hot(
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the stereo configuration of a bond.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
@@ -854,9 +852,9 @@ def get_bond_stereo_one_hot(
 def get_bond_graph_distance_one_hot(
     bond: rdkit.Chem.rdchem.Bond,
     graph_dist_matrix: np.ndarray,
-    allowable_set: List[int] = DEFAULT_GRAPH_DISTANCE_SET,
+    allowable_set: list[int] = DEFAULT_GRAPH_DISTANCE_SET,
     include_unknown_set: bool = True,
-) -> List[float]:
+) -> list[float]:
     """Get an one-hot feature of graph distance.
 
     Parameters
@@ -865,14 +863,14 @@ def get_bond_graph_distance_one_hot(
         RDKit bond object
     graph_dist_matrix: np.ndarray
         The return value of `Chem.GetDistanceMatrix(mol)`. The shape is `(num_atoms, num_atoms)`.
-    allowable_set: List[int]
+    allowable_set: list[int]
         The graph distance types to consider. The default set is `[1, 2, ..., 7]`.
     include_unknown_set: bool, default False
         If true, the index of all types not in `allowable_set` is `len(allowable_set)`.
 
     Returns
     -------
-    List[float]
+    list[float]
         A one-hot vector of the graph distance.
         If `include_unknown_set` is False, the length is `len(allowable_set)`.
         If `include_unknown_set` is True, the length is `len(allowable_set) + 1`.
